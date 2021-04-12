@@ -8,8 +8,11 @@ import com.drtshock.obsidiandestroyer.enumerations.DamageResult;
 import com.drtshock.obsidiandestroyer.enumerations.TimerState;
 import com.drtshock.obsidiandestroyer.events.DurabilityDamageEvent;
 import com.drtshock.obsidiandestroyer.events.xEntityExplodeEvent;
-import com.drtshock.obsidiandestroyer.managers.factions.FactionsIntegration;
 import com.drtshock.obsidiandestroyer.util.Util;
+import net.countercraft.movecraft.MovecraftLocation;
+import net.countercraft.movecraft.craft.Craft;
+import net.countercraft.movecraft.craft.CraftManager;
+import net.countercraft.movecraft.utils.MathUtils;
 import org.bukkit.*;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
@@ -195,6 +198,7 @@ public class ChunkManager {
 
         // Check explosion blocks and their distance from the detonation.
         for (Block block : event.blockList()) {
+
             // location corrections...
             final Location blockLocation = block.getLocation().clone();
             blockLocation.setY(blockLocation.getBlockY() + 0.5);
@@ -208,6 +212,15 @@ public class ChunkManager {
             } else if (blockLocation.getBlockZ() < 0) {
                 blockLocation.setZ(blockLocation.getBlockZ() + -0.5);
             }
+
+            MovecraftLocation mloc = MathUtils.bukkit2MovecraftLoc(blockLocation);
+            CraftManager.getInstance().getCraftsInWorld(blockLocation.getWorld());
+            for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockLocation.getWorld())) {
+                if (craft.getHitBox().contains(mloc)) {
+                    return;
+                }
+            }
+
             // distance from detonator to the target block
             final double dist = detonatorLoc.distance(blockLocation);
 
@@ -482,23 +495,12 @@ public class ChunkManager {
             }
         }
 
-        // Apply effects with factions
-        final boolean factionsApplied = FactionsIntegration.isUsing() && ConfigManager.getInstance().getHandleOfflineFactions();
-
         // Bypass list for special handling's
         final List<Block> bypassBlockList = new ArrayList<Block>();
 
         // Remove managed blocks
         for (Block block : blocksDestroyed) {
             event.blockList().remove(block);
-
-            // Factions bypasses
-            if (factionsApplied && !blockedBlockLocations.contains(block.getLocation())) {
-                if (FactionsIntegration.get().isFactionOffline(block.getLocation())) {
-                    // Add block to bypass list to override
-                    bypassBlockList.add(block);
-                }
-            }
         }
         // Remove ignored blocks
         for (Block block : blocksIgnored) {
@@ -651,12 +653,6 @@ public class ChunkManager {
 
         // Durability multiplier hook for Factions
         double durabilityMultiplier = 1D;
-        if (FactionsIntegration.isUsing()) {
-            durabilityMultiplier = Util.getMultiplier(at);
-            if (durabilityMultiplier == 0) {
-                return DamageResult.NONE;
-            }
-        }
 
         // Handle block if the materials durability is greater than one, else destroy the block
         if ((materials.getDurability(blockTypeName, blockData) * durabilityMultiplier) >= 2) {
@@ -825,12 +821,6 @@ public class ChunkManager {
 
         // Durability multiplier hook for Factions
         double durabilityMultiplier = 1D;
-        if (FactionsIntegration.isUsing()) {
-            durabilityMultiplier = Util.getMultiplier(at);
-            if (durabilityMultiplier == 0) {
-                return DamageResult.NONE;
-            }
-        }
 
         // Handle block if the materials durability is greater than one, else destroy the block
         if ((materials.getDurability(blockTypeName, blockData) * durabilityMultiplier) >= 2) {
@@ -904,8 +894,6 @@ public class ChunkManager {
         final LinkedList<Block> blocklist = new LinkedList<Block>();
         // Bypass list for special handlings
         final List<Block> bypassBlockList = new ArrayList<Block>();
-        final boolean useFactions = FactionsIntegration.isUsing();
-        final boolean applyFactions = useFactions && ConfigManager.getInstance().getHandleOfflineFactions();
         // Iterator through the events blocks
         Iterator<Block> iter = event.getBlockList().iterator();
         while (iter.hasNext()) {
@@ -914,23 +902,12 @@ public class ChunkManager {
             if (MaterialManager.getInstance().contains(block.getType().name(), block.getData()) && !blocklist.contains(block)) {
                 blocklist.add(block);
             }
-            // Factions bypasses
-            if (useFactions && applyFactions) {
-                if (FactionsIntegration.get().isFactionOffline(block.getLocation())) {
-                    bypassBlockList.add(block);
-                }
-            }
         }
 
         event.getBlockList().removeAll(blocklist);
 
         org.bukkit.event.block.BlockExplodeEvent explosionEvent = new org.bukkit.event.block.BlockExplodeEvent(event.getImpactLocation().getBlock(), blocklist, 0.0f);
         ObsidianDestroyer.getInstance().getServer().getPluginManager().callEvent(explosionEvent);
-
-        // Repopulate the events blocklist with blocks through the bypass
-        if (applyFactions && bypassBlockList.size() > 0) {
-            explosionEvent.blockList().addAll(bypassBlockList);
-        }
 
         if (event.getImpactLocation().getBlock() != null) {
             // Remove metadata since it is no longer needed
@@ -939,12 +916,8 @@ public class ChunkManager {
 
         // Do nothing if the event is cancelled (and not bypassed...)
         if (explosionEvent.isCancelled()) {
-            if (!applyFactions || bypassBlockList.size() == 0) {
-                ObsidianDestroyer.debug("Cannons Explosion Event Cancelled");
-                return;
-            } else {
-                ObsidianDestroyer.debug("Cannons Explosion Event Cancellation Bypassed");
-            }
+            ObsidianDestroyer.debug("Cannons Explosion Event Cancelled");
+            return;
         }
 
         // List of blocks that will be removed from the blocklist
@@ -1085,12 +1058,6 @@ public class ChunkManager {
 
         // Durability multiplier hook for Factions
         double durabilityMultiplier = 1D;
-        if (FactionsIntegration.isUsing()) {
-            durabilityMultiplier = Util.getMultiplier(at);
-            if (durabilityMultiplier == 0) {
-                return DamageResult.NONE;
-            }
-        }
 
         // Handle block if the materials durability is greater than one, else destroy the block
         if ((materials.getDurability(blockTypeName, blockData) * durabilityMultiplier) >= 2) {
