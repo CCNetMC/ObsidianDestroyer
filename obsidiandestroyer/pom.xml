@@ -99,5 +99,12 @@
             <version>2.5.5</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>net.countercraft.movecraft</groupId>
+            <artifactId>Movecraft</artifactId>
+            <version>7.0.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/Movecraft.jar</systemPath>
+        </dependency>
     </dependencies>
 </project>

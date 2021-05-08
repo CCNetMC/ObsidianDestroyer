@@ -10,6 +10,10 @@ import com.drtshock.obsidiandestroyer.events.DurabilityDamageEvent;
 import com.drtshock.obsidiandestroyer.events.xEntityExplodeEvent;
 import com.drtshock.obsidiandestroyer.managers.factions.FactionsIntegration;
 import com.drtshock.obsidiandestroyer.util.Util;
+import net.countercraft.movecraft.MovecraftLocation;
+import net.countercraft.movecraft.craft.Craft;
+import net.countercraft.movecraft.craft.CraftManager;
+import net.countercraft.movecraft.utils.MathUtils;
 import org.bukkit.*;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
@@ -208,6 +212,16 @@ public class ChunkManager {
             } else if (blockLocation.getBlockZ() < 0) {
                 blockLocation.setZ(blockLocation.getBlockZ() + -0.5);
             }
+
+
+            MovecraftLocation mloc = MathUtils.bukkit2MovecraftLoc(blockLocation);
+            CraftManager.getInstance().getCraftsInWorld(blockLocation.getWorld());
+            for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockLocation.getWorld())) {
+                if (craft.getHitBox().contains(mloc)) {
+                    return;
+                }
+            }
+
             // distance from detonator to the target block
             final double dist = detonatorLoc.distance(blockLocation);
 
@@ -491,15 +505,8 @@ public class ChunkManager {
         // Remove managed blocks
         for (Block block : blocksDestroyed) {
             event.blockList().remove(block);
-
-            // Factions bypasses
-            if (factionsApplied && !blockedBlockLocations.contains(block.getLocation())) {
-                if (FactionsIntegration.get().isFactionOffline(block.getLocation())) {
-                    // Add block to bypass list to override
-                    bypassBlockList.add(block);
-                }
-            }
         }
+
         // Remove ignored blocks
         for (Block block : blocksIgnored) {
             event.blockList().remove(block);
@@ -913,12 +920,6 @@ public class ChunkManager {
             // Check if handled and not already checked
             if (MaterialManager.getInstance().contains(block.getType().name(), block.getData()) && !blocklist.contains(block)) {
                 blocklist.add(block);
-            }
-            // Factions bypasses
-            if (useFactions && applyFactions) {
-                if (FactionsIntegration.get().isFactionOffline(block.getLocation())) {
-                    bypassBlockList.add(block);
-                }
             }
         }
 
