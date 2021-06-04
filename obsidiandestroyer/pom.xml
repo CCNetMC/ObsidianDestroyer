@@ -102,7 +102,7 @@
         <dependency>
             <groupId>net.countercraft.movecraft</groupId>
             <artifactId>Movecraft</artifactId>
-            <version>7.0.0</version>
+            <version>8.0.0-a.3</version>
             <scope>system</scope>
             <systemPath>${basedir}/lib/Movecraft.jar</systemPath>
         </dependency>
