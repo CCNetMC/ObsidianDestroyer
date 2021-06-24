@@ -35,7 +35,7 @@ public class ChunkManager {
 
     private static ChunkManager instance;
     private final File durabilityDir;
-    private ConcurrentMap<String, ChunkWrapper> chunks = new ConcurrentHashMap<String, ChunkWrapper>();
+    private ConcurrentMap<String, ChunkWrapper> chunks = new ConcurrentHashMap<>();
     private boolean doneSave = true;
     private List<String> disabledWorlds;
     private boolean blockExplodeEvent;
@@ -215,7 +215,6 @@ public class ChunkManager {
 
 
             MovecraftLocation mloc = MathUtils.bukkit2MovecraftLoc(blockLocation);
-            CraftManager.getInstance().getCraftsInWorld(blockLocation.getWorld());
             for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockLocation.getWorld())) {
                 if (craft.getHitBox().contains(mloc)) {
                     return;
