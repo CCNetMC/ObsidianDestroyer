@@ -1004,7 +1004,16 @@ public class ChunkManager {
                         if (result != DamageResult.NONE && result != DamageResult.CANCELLED) {
                             // Cancel the event
                             if (!event.isCancelled()) {
-                                event.setCancelled(true);
+                                boolean isOnShip = false;
+                                for (Craft craft: CraftManager.getInstance().getCraftsInWorld(location.getWorld())) {
+                                    if (craft.getHitBox().contains(MathUtils.bukkit2MovecraftLoc(location))) {
+                                        isOnShip = true;
+                                        break;
+                                    }
+                                }
+                                if (!isOnShip) {
+                                    event.setCancelled(true);
+                                }
                             }
                         }
                     }
