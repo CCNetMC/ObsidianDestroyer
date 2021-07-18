@@ -982,6 +982,14 @@ public class ChunkManager {
         }
 
         final Location location = event.getImpactLocation();
+
+        MovecraftLocation movecraftLocation = MathUtils.bukkit2MovecraftLoc(location);
+        for (Craft craft: CraftManager.getInstance().getCraftsInWorld(location.getWorld())) {
+            if (craft.getHitBox().contains(movecraftLocation)) {
+                return;
+            }
+        }
+
         // Display effects on impact location
         if (ConfigManager.getInstance().getEffectsEnabled()) {
             event.getImpactLocation().getWorld().playEffect(location, Effect.MOBSPAWNER_FLAMES, 0);
@@ -1004,16 +1012,7 @@ public class ChunkManager {
                         if (result != DamageResult.NONE && result != DamageResult.CANCELLED) {
                             // Cancel the event
                             if (!event.isCancelled()) {
-                                boolean isOnShip = false;
-                                for (Craft craft: CraftManager.getInstance().getCraftsInWorld(location.getWorld())) {
-                                    if (craft.getHitBox().contains(MathUtils.bukkit2MovecraftLoc(location))) {
-                                        isOnShip = true;
-                                        break;
-                                    }
-                                }
-                                if (!isOnShip) {
-                                    event.setCancelled(true);
-                                }
+                                event.setCancelled(true);
                             }
                         }
                     }
